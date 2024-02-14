@@ -1,9 +1,16 @@
-import { Request } from "express";
+import { Request } from "express"
 
 export interface UserRequest extends Request {
-    body: {
-        name: string;
-        email: string;
-        password: string;
-    }
+  body: {
+    name: string
+    email: string
+    password: string
+  }
+}
+
+export interface VerifyEmailRequest extends Request {
+  body: {
+    token: string
+    userId: string
+  }
 }
