@@ -8,4 +8,5 @@ export const {
   APP_EMAIL,
   PASSWORD_RESET_LINK,
   SIGN_IN_URL,
+  JWT_SECRET
 } = env

@@ -1,18 +1,25 @@
+import crypto from "crypto"
+import jwt from "jsonwebtoken"
 import { RequestHandler } from "express"
+import { isValidObjectId } from "mongoose"
 
 import User from "@/models/User"
+import PasswordResetToken from "@/models/PasswordResetToken"
+import EmailVerificationToken from "@/models/EmailVerificationToken"
+
 import {
   ReVerifyEmailRequest,
   UserRequest,
   VerifyEmailRequest,
 } from "@/types/user"
+
 import { generateToken } from "@/utils/helpers"
-import { sendForgotPasswordLink, sendVerificationEmail, sendResetSuccessEmail } from "@/utils/mail"
-import EmailVerificationToken from "@/models/EmailVerificationToken"
-import { isValidObjectId } from "mongoose"
-import PasswordResetToken from "@/models/PasswordResetToken"
-import crypto from "crypto"
-import { PASSWORD_RESET_LINK } from "@/utils/variables"
+import { JWT_SECRET, PASSWORD_RESET_LINK } from "@/utils/variables"
+import {
+  sendForgotPasswordLink,
+  sendVerificationEmail,
+  sendResetSuccessEmail,
+} from "@/utils/mail"
 
 export const createUser: RequestHandler = async (req: UserRequest, res) => {
   const { name, email, password } = req.body
@@ -106,20 +113,60 @@ export const tokenValid: RequestHandler = async (req, res) => {
 }
 
 export const updatePassword: RequestHandler = async (req, res) => {
-  const { userId, password } = req.body;
+  const { userId, password } = req.body
 
-  const user = await User.findById(userId);
-  if (!user) return res.status(403).json({ error: "Unauthorized access!" });
+  const user = await User.findById(userId)
+  if (!user) return res.status(403).json({ error: "Unauthorized access!" })
 
-  const isMatch = await user.comparePassword(password);
-  if(isMatch) return res.status(422).json({ error: "New password cannot be same as old password!" });
+  const isMatch = await user.comparePassword(password)
+  if (isMatch)
+    return res
+      .status(422)
+      .json({ error: "New password cannot be same as old password!" })
 
-  user.password = password;
-  await user.save();
+  user.password = password
+  await user.save()
 
-  await PasswordResetToken.findOneAndDelete({ owner: user._id });
+  await PasswordResetToken.findOneAndDelete({ owner: user._id })
 
-  sendResetSuccessEmail(user.name, user.email);
-  res.json({ message: "Password updated successfully!" });
+  sendResetSuccessEmail(user.name, user.email)
+  res.json({ message: "Password updated successfully!" })
+}
 
+export const signIn: RequestHandler = async (req, res) => {
+  const { email, password } = req.body
+
+  const user = await User.findOne({ email })
+  if (!user)
+    return res.status(403).json({ error: "Email or Password is not correct!" })
+
+  // compare Password
+  const isMatch = await user.comparePassword(password)
+  if (!isMatch)
+    return res.status(403).json({ error: "Email or Password is not correct!" })
+
+  // generate token
+  const token = jwt.sign(
+    {
+      userId: user._id,
+    },
+    JWT_SECRET
+  )
+
+  user.tokens.push(token)
+  await user.save()
+
+  res.json({ 
+    profile: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      verified: user.verified,
+      avatar: user.avatar,
+      followers: user.followers.length,
+      followings: user.followings.length,
+      favorites: user.favorites,
+    },
+    token,
+  })
 }

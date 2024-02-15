@@ -1,19 +1,21 @@
+import { Router } from "express"
 import {
   createUser,
   verifyEmail,
   sendReVerificationToken,
   generateForgotPasswordLink,
   tokenValid,
-  updatePassword
+  updatePassword,
+  signIn,
 } from "@/controllers/user"
-import { verifyResetToken } from "@/middlewares/auth"
+import { isAuth, verifyResetToken } from "@/middlewares/auth"
 import { validate } from "@/middlewares/validator"
 import {
   CreateUserSchema,
+  SignInValidationSchema,
   TokenAndIdValidationSchema,
   UpdatePasswordSchema,
 } from "@/utils/validationSchema"
-import { Router } from "express"
 
 const router = Router()
 
@@ -38,5 +40,13 @@ router.post(
   verifyResetToken,
   updatePassword
 )
+
+router.post("/sign-in", validate(SignInValidationSchema), signIn)
+
+router.get("/is-auth", isAuth, (req, res) => {
+  res.json({
+    profile: req.user,
+  })
+})
 
 export default router
