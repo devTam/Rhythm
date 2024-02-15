@@ -37,10 +37,12 @@ export const isAuth: RequestHandler = async (req, res, next) => {
     id: user._id,
     name: user.name,
     email: user.email,
-    verified: user.verified,
+    verified: user.verified,  
     avatar: user.avatar?.url,
     followers: user.followers.length,
     followings: user.followings.length,
   }
+
+  req.token = token;
   next()
 }

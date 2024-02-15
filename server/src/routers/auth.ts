@@ -1,4 +1,5 @@
 import { Router } from "express"
+
 import {
   createUser,
   verifyEmail,
@@ -7,9 +8,15 @@ import {
   tokenValid,
   updatePassword,
   signIn,
-} from "@/controllers/user"
-import { isAuth, verifyResetToken } from "@/middlewares/auth"
+  updateProfile,
+  sendProfile,
+  signOut
+} from "@/controllers/auth"
+
+import fileParser from "@/middlewares/fileParser"
 import { validate } from "@/middlewares/validator"
+import { isAuth, verifyResetToken } from "@/middlewares/auth"
+
 import {
   CreateUserSchema,
   SignInValidationSchema,
@@ -43,10 +50,10 @@ router.post(
 
 router.post("/sign-in", validate(SignInValidationSchema), signIn)
 
-router.get("/is-auth", isAuth, (req, res) => {
-  res.json({
-    profile: req.user,
-  })
-})
+router.get("/is-auth", isAuth, sendProfile)
+
+router.post("/update-profile", isAuth, fileParser, updateProfile);
+
+router.post("/sign-out", isAuth, signOut)
 
 export default router
