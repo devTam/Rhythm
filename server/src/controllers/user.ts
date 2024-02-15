@@ -1,10 +1,18 @@
 import { RequestHandler } from "express"
 
-import User from "@/models/user"
-import { UserRequest, VerifyEmailRequest } from "@/types/user"
+import User from "@/models/User"
+import {
+  ReVerifyEmailRequest,
+  UserRequest,
+  VerifyEmailRequest,
+} from "@/types/user"
 import { generateToken } from "@/utils/helpers"
-import { sendVerificationEmail } from "@/utils/mail"
-import EmailVerificationToken from "@/models/emailVerificationToken"
+import { sendForgotPasswordLink, sendVerificationEmail, sendResetSuccessEmail } from "@/utils/mail"
+import EmailVerificationToken from "@/models/EmailVerificationToken"
+import { isValidObjectId } from "mongoose"
+import PasswordResetToken from "@/models/PasswordResetToken"
+import crypto from "crypto"
+import { PASSWORD_RESET_LINK } from "@/utils/variables"
 
 export const createUser: RequestHandler = async (req: UserRequest, res) => {
   const { name, email, password } = req.body
@@ -14,10 +22,15 @@ export const createUser: RequestHandler = async (req: UserRequest, res) => {
     password,
   })
 
-  const token = generateToken(6)
+  const token = generateToken()
+  await EmailVerificationToken.create({
+    owner: user._id,
+    token,
+  })
+
   sendVerificationEmail(token, { name, email, userId: user._id.toString() })
 
-  res.json({ user: { id: user._id, name, email } }).status(201)
+  res.status(201).json({ user: { id: user._id, name, email } })
 }
 
 export const verifyEmail: RequestHandler = async (
@@ -39,9 +52,74 @@ export const verifyEmail: RequestHandler = async (
   if (!isMatch) return res.status(403).json({ message: "Invalid token" })
 
   await User.findByIdAndUpdate(userId, { verified: true })
-  await EmailVerificationToken.findByIdAndDelete(verificationToken._id);
+  await EmailVerificationToken.findByIdAndDelete(verificationToken._id)
 
   res.json({
-    message: "Your Email is verified!"
+    message: "Your Email is verified!",
   })
+}
+
+export const sendReVerificationToken: RequestHandler = async (
+  req: ReVerifyEmailRequest,
+  res
+) => {
+  const { userId } = req.body
+  if (!isValidObjectId(userId))
+    return res.status(403).json({ error: "Invalid Request!" })
+  // Delete prev token
+  await EmailVerificationToken.findOneAndDelete({ owner: userId })
+  const token = generateToken()
+  await EmailVerificationToken.create({ token, owner: userId })
+
+  const user = await User.findById(userId)
+
+  if (!user) return res.status(403).json({ error: "User not found!" })
+  sendVerificationEmail(token, {
+    name: user.name,
+    email: user.email,
+    userId: user._id.toString(),
+  })
+
+  res.json({ message: "Verification email sent!" })
+}
+
+export const generateForgotPasswordLink: RequestHandler = async (req, res) => {
+  const { email } = req.body
+
+  const user = await User.findOne({ email })
+  if (!user) return res.status(404).json({ error: "User not found!" })
+
+  // generate Link
+  await PasswordResetToken.findOneAndDelete({ owner: user._id })
+  const token = crypto.randomBytes(36).toString("hex")
+
+  await PasswordResetToken.create({ owner: user._id, token })
+
+  const resetLink = `${PASSWORD_RESET_LINK}?token=${token}&userId=${user._id}`
+
+  sendForgotPasswordLink({ email: user.email, link: resetLink })
+  res.json({ message: "Reset link sent!" })
+}
+
+export const tokenValid: RequestHandler = async (req, res) => {
+  res.json({ valid: true })
+}
+
+export const updatePassword: RequestHandler = async (req, res) => {
+  const { userId, password } = req.body;
+
+  const user = await User.findById(userId);
+  if (!user) return res.status(403).json({ error: "Unauthorized access!" });
+
+  const isMatch = await user.comparePassword(password);
+  if(isMatch) return res.status(422).json({ error: "New password cannot be same as old password!" });
+
+  user.password = password;
+  await user.save();
+
+  await PasswordResetToken.findOneAndDelete({ owner: user._id });
+
+  sendResetSuccessEmail(user.name, user.email);
+  res.json({ message: "Password updated successfully!" });
+
 }
