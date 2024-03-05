@@ -6,7 +6,6 @@ import PasswordResetToken from "@/models/PasswordResetToken"
 
 import { JWT_SECRET } from "@/utils/variables"
 
-
 export const verifyResetToken: RequestHandler = async (req, res, next) => {
   const { token, userId } = req.body
 
@@ -37,12 +36,19 @@ export const isAuth: RequestHandler = async (req, res, next) => {
     id: user._id,
     name: user.name,
     email: user.email,
-    verified: user.verified,  
+    verified: user.verified,
     avatar: user.avatar?.url,
     followers: user.followers.length,
     followings: user.followings.length,
   }
 
-  req.token = token;
+  req.token = token
   next()
+}
+
+export const isVerified: RequestHandler = async (req, res, next) => {
+  if (!req.user.verified)
+    return res.status(403).json({ error: "Please verify your email account" })
+
+  next();
 }
