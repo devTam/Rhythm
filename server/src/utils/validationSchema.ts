@@ -63,10 +63,18 @@ export const SignInValidationSchema = yup.object().shape({
 })
 
 export const AudioValidationSchema = yup.object().shape({
-  title: yup.string().trim().required("Title is required!"),
-  about: yup.string().trim().required("About is required!"),
+  title: yup.string().required("Title is required!"),
+  about: yup.string().required("About is required!"),
   category: yup
     .string()
     .oneOf(ICategories, "Invalid category!")
     .required("Category is required!"),
+})
+
+export const UpdateAudioValidationSchema = yup.object().shape({
+  title: yup.string(),
+  about: yup.string(),
+  category: yup
+    .string()
+    .oneOf(ICategories, "Invalid category!")
 })

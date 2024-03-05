@@ -13,6 +13,14 @@ interface CreateAudioRequest extends RequestWithFiles {
   }
 }
 
+interface UpdateAudioRequest extends RequestWithFiles {
+  body: {
+    title?: string
+    about?: string
+    category?: ICategoriesTypes
+  }
+}
+
 export const createAudio: RequestHandler = async (
   req: CreateAudioRequest,
   res
@@ -62,6 +70,68 @@ export const createAudio: RequestHandler = async (
       about,
       file: newAudio.file.url,
       poster: newAudio.poster?.url,
+    },
+  })
+}
+
+export const updateAudio: RequestHandler = async (
+  req: UpdateAudioRequest,
+  res
+) => {
+  const { title, about, category } = req.body
+  const poster = req.files?.poster as formidable.File
+  const ownerId = req.user.id
+  const { audioId } = req.params
+
+  const audio = await Audio.findOneAndUpdate({
+    owner: ownerId,
+    _id: audioId,
+  })
+
+  if (!audio)
+    return res.status(404).json({
+      error: "Audio not found!",
+    })
+
+  if (title) {
+    audio.title = title
+  }
+
+  if (about) {
+    audio.about = about
+  }
+
+  if (category) {
+    audio.category = category
+  }
+
+  if (poster) {
+    if (audio.poster?.publicId) {
+      await cloudinary.uploader.destroy(audio.poster.publicId)
+    }
+
+    const posterRes = await cloudinary.uploader.upload(poster.filepath, {
+      width: 300,
+      height: 300,
+      crop: "thumb",
+      gravity: "face",
+    })
+
+    audio.poster = {
+      url: posterRes.secure_url,
+      publicId: posterRes.public_id,
+    }
+  }
+
+  await audio.save();
+
+
+  res.json({
+    audio: {
+      title: audio.title,
+      about: audio.about,
+      file: audio.file.url,
+      poster: audio.poster?.url,
     },
   })
 }
