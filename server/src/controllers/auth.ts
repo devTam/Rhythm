@@ -1,7 +1,10 @@
 import crypto from "crypto"
 import jwt from "jsonwebtoken"
+import formidable from "formidable"
 import { RequestHandler } from "express"
 import { isValidObjectId } from "mongoose"
+
+import cloudinary from "@/cloud"
 
 import User from "@/models/User"
 import PasswordResetToken from "@/models/PasswordResetToken"
@@ -20,9 +23,8 @@ import {
   sendVerificationEmail,
   sendResetSuccessEmail,
 } from "@/utils/mail"
+
 import { RequestWithFiles } from "@/middlewares/fileParser"
-import cloudinary from "@/cloud"
-import formidable from "formidable"
 
 export const createUser: RequestHandler = async (req: UserRequest, res) => {
   const { name, email, password } = req.body
@@ -235,7 +237,7 @@ export const signOut: RequestHandler = async (req, res) => {
   } else {
     user.tokens = user.tokens.filter((userToken) => userToken !== token)
   }
-  
+
   await user.save()
   res.json({ success: true })
 }
