@@ -1,7 +1,8 @@
-import Audio from "@/models/audio"
+import Audio, { IAudio } from "@/models/audio"
 import Favorite from "@/models/favorite"
+import { IPopulatedFavList } from "@/types/audio"
 import { RequestHandler } from "express"
-import { isValidObjectId } from "mongoose"
+import { ObjectId, isValidObjectId } from "mongoose"
 
 export const toggleFavorite: RequestHandler = async (req, res) => {
   const audioId = req.query.audioId as string
@@ -74,4 +75,43 @@ export const toggleFavorite: RequestHandler = async (req, res) => {
     })
   }
   res.json({ status })
+}
+
+export const getFavorites: RequestHandler = async (req, res) => {
+  const userId = req.user.id
+  const favorites = await Favorite.findOne({ owner: userId }).populate<{
+    items: IPopulatedFavList[]
+  }>({
+    path: "items",
+    populate: {
+      path: "owner",
+    },
+  })
+
+  if (!favorites) return res.json({ favorites: {} })
+  const audios = favorites.items.map((item) => {
+    return {
+      id: item._id,
+      title: item.title,
+      category: item.category,
+      file: item.file.url,
+      poster: item.poster?.url,
+      owner: { name: item.owner.name, id: item.owner._id },
+    }
+  })
+  res.json({ audios })
+}
+
+export const getIsFavorite: RequestHandler = async (req, res) => {
+  const audioId = req.query.audioId as string
+
+  if (!isValidObjectId(audioId))
+    return res.status(422).json({ error: "Invalid audioId!" })
+
+  const favorite = await Favorite.findOne({
+    owner: req.user.id,
+    items: audioId,
+  })
+
+  res.json({ result: favorite ? true : false })
 }

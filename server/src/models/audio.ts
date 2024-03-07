@@ -1,10 +1,11 @@
 import { ICategories, ICategoriesTypes } from "@/utils/audio_category"
 import { Model, ObjectId, Schema, model, models } from "mongoose"
 
-export interface IAudio {
+export interface IAudio<T = ObjectId> {
+  _id: ObjectId
   title: string
   about: string
-  owner: ObjectId
+  owner: T
   file: {
     url: string
     publicId: string
