@@ -16,6 +16,7 @@ export interface IAudio<T = ObjectId> {
   }
   likes: ObjectId[]
   category: ICategoriesTypes
+  createdAt: Date
 }
 
 const AudioSchema = new Schema<IAudio>({
