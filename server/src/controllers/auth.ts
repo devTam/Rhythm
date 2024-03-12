@@ -7,8 +7,8 @@ import { isValidObjectId } from "mongoose"
 import cloudinary from "@/cloud"
 
 import User from "@/models/User"
-import PasswordResetToken from "@/models/PasswordResetToken"
-import EmailVerificationToken from "@/models/EmailVerificationToken"
+import PasswordResetToken from "@/models/passwordResetToken"
+import EmailVerificationToken from "@/models/emailVerificationToken"
 
 import {
   ReVerifyEmailRequest,

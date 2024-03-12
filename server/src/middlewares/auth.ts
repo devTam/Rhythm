@@ -2,7 +2,7 @@ import { RequestHandler } from "express"
 import { JwtPayload, verify } from "jsonwebtoken"
 
 import User from "@/models/User"
-import PasswordResetToken from "@/models/PasswordResetToken"
+import PasswordResetToken from "@/models/passwordResetToken"
 
 import { JWT_SECRET } from "@/utils/variables"
 
@@ -50,5 +50,5 @@ export const isVerified: RequestHandler = async (req, res, next) => {
   if (!req.user.verified)
     return res.status(403).json({ error: "Please verify your email account" })
 
-  next();
+  next()
 }

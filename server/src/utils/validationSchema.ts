@@ -100,6 +100,23 @@ export const PlaylistValidationSchema = yup.object().shape({
   }),
   visibility: yup
     .string()
-    .oneOf(["public", "private"], "Visibility must be public or private!")
-    //.required("Visibility is required!"),
+    .oneOf(["public", "private"], "Visibility must be public or private!"),
+  //.required("Visibility is required!"),
+})
+export const updateHistoryValidationSchema = yup.object().shape({
+  audio: yup
+    .string()
+    .transform(function (value) {
+      return this.isType(value) && isValidObjectId(value) ? value : ""
+    })
+    .required("Audio is required!"),
+  progress: yup.number().required("History progress is required!"),
+  date: yup
+    .string()
+    .transform(function (value) {
+      const date = new Date(value)
+      if (date instanceof Date) return value
+      return ""
+    })
+    .required("Invalid date!"),
 })
