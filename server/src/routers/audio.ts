@@ -1,4 +1,4 @@
-import { createAudio, updateAudio } from "@/controllers/audio"
+import { createAudio, updateAudio, getLatestUploads } from "@/controllers/audio"
 import { isAuth, isVerified } from "@/middlewares/auth"
 import fileParser from "@/middlewares/fileParser"
 import { validate } from "@/middlewares/validator"
@@ -24,5 +24,7 @@ router.patch(
   validate(UpdateAudioValidationSchema),
   updateAudio
 )
+
+router.get("/latest", getLatestUploads)
 
 export default router
