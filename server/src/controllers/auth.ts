@@ -6,7 +6,7 @@ import { isValidObjectId } from "mongoose"
 
 import cloudinary from "@/cloud"
 
-import User from "@/models/User"
+import User from "@/models/user"
 import PasswordResetToken from "@/models/passwordResetToken"
 import EmailVerificationToken from "@/models/emailVerificationToken"
 
@@ -28,6 +28,11 @@ import { RequestWithFiles } from "@/middlewares/fileParser"
 
 export const createUser: RequestHandler = async (req: UserRequest, res) => {
   const { name, email, password } = req.body
+
+  const oldUser = await User.findOne({ email })
+
+  if (oldUser) return res.status(403).json({ error: "Email already in use!" })
+
   const user = await User.create({
     name,
     email,
@@ -78,14 +83,17 @@ export const sendReVerificationToken: RequestHandler = async (
   const { userId } = req.body
   if (!isValidObjectId(userId))
     return res.status(403).json({ error: "Invalid Request!" })
+  const user = await User.findById(userId)
+  if (!user) return res.status(403).json({ error: "Invalid Request!" })
+
+  if (user.verified)
+    return res.status(422).json({ error: "Your account is already verified!" })
+
   // Delete prev token
   await EmailVerificationToken.findOneAndDelete({ owner: userId })
   const token = generateToken()
   await EmailVerificationToken.create({ token, owner: userId })
 
-  const user = await User.findById(userId)
-
-  if (!user) return res.status(403).json({ error: "User not found!" })
   sendVerificationEmail(token, {
     name: user.name,
     email: user.email,

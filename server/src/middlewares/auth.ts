@@ -1,7 +1,7 @@
 import { RequestHandler } from "express"
 import { JwtPayload, verify } from "jsonwebtoken"
 
-import User from "@/models/User"
+import User from "@/models/user"
 import PasswordResetToken from "@/models/passwordResetToken"
 
 import { JWT_SECRET } from "@/utils/variables"
