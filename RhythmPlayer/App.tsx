@@ -1,16 +1,7 @@
-import { FC } from 'react'
-import { StyleSheet, Text, SafeAreaView } from 'react-native'
+import SignUp from "@views/auth/SignUp";
 
-interface Prop {}
+const App = () => {
+  return <SignUp />;
+};
 
-const App: FC<Prop> = () => {
-  return (
-    <SafeAreaView>
-      <Text>Hello World</Text>
-    </SafeAreaView>
-  )
-}
-
-export default App
-
-const styles = StyleSheet.create({})
+export default App;
