@@ -1,4 +1,4 @@
-import {FC} from 'react';
+import {FC, useState} from 'react';
 import {StyleSheet, SafeAreaView, View} from 'react-native';
 import * as yup from 'yup';
 
@@ -6,6 +6,7 @@ import colors from 'utils/colors';
 import AuthInputField from 'components/form/AuthInputField';
 import Form from 'components/form';
 import SubmitBtn from 'components/form/SubmitBtn';
+import PasswordVisibilityIcon from 'ui/PasswordVisibilityIcon';
 
 const signupSchema = yup.object({
   name: yup
@@ -31,11 +32,17 @@ const signupSchema = yup.object({
 
 interface Props {}
 
+const initialValues = {
+  name: '',
+  email: '',
+  password: '',
+};
+
 const SignUp: FC<Props> = props => {
-  const initialValues = {
-    name: '',
-    email: '',
-    password: '',
+  const [secureEntry, setSecureEntry] = useState(true);
+
+  const togglePasswordView = () => {
+    setSecureEntry(!secureEntry);
   };
 
   return (
@@ -65,7 +72,10 @@ const SignUp: FC<Props> = props => {
             label="Password"
             placeholder="*********"
             autoCapitalize="none"
-            secureTextEntry
+            secureTextEntry={secureEntry}
+            containerStyle={styles.marginBottom}
+            rightIcon={<PasswordVisibilityIcon privateIcon={secureEntry} />}
+            onRightIconPress={togglePasswordView}
           />
           <SubmitBtn title="Sign up" />
         </View>
