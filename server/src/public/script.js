@@ -56,7 +56,6 @@ const displaySuccess = (message) => {
 const handleSubmit = async (e) => {
   e.preventDefault()
   if (!password.value.trim()) {
-    console.log("here")
     return displayError("Password is required")
   }
   if (!PASS_REGEX.test(password.value)) {
@@ -81,6 +80,8 @@ const handleSubmit = async (e) => {
 
   if (!res.ok) {
     const { error } = await res.json()
+    button.disabled = false;
+    button.innerText = "Reset Password"
     return displayError(error)
   }
 

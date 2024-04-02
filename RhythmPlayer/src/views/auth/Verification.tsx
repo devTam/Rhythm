@@ -1,12 +1,17 @@
 import {FC, useEffect, useRef, useState} from 'react';
-import {Keyboard, StyleSheet, TextInput, View} from 'react-native';
+import {Keyboard, StyleSheet, Text, TextInput, View} from 'react-native';
 
 import AppLink from 'ui/AppLink';
 import AuthFormContainer from 'components/AuthFormContainer';
 import OTPField from 'ui/OTPField';
 import AppBtn from 'ui/AppBtn';
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {IAuthStackParamList} from 'types/navigation';
+import client from 'api/client';
+import {NavigationProp, useNavigation} from '@react-navigation/native';
+import colors from 'utils/colors';
 
-interface Props {}
+type Props = NativeStackScreenProps<IAuthStackParamList, 'Verification'>;
 
 const otpFields = new Array(6).fill('');
 
@@ -14,6 +19,13 @@ const Verification: FC<Props> = props => {
   const inputRef = useRef<TextInput>(null);
   const [otp, setOtp] = useState([...otpFields]);
   const [activeOtpIndex, setActiveOtpIndex] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [countDown, setCountDown] = useState(60);
+  const [canSendOtp, setCanSendOtp] = useState(false);
+
+  const navigation = useNavigation<NavigationProp<IAuthStackParamList>>();
+
+  const {userInfo} = props.route.params;
 
   const handleChange = (value: string, i: number) => {
     const newOtp = [...otp];
@@ -38,13 +50,60 @@ const Verification: FC<Props> = props => {
     }
   };
 
-  const handleSubmit = () => {
-    
-  }
+  const isValidOtp = otp.every(value => {
+    return value.trim();
+  });
+
+  const handleSubmit = async () => {
+    if (!isValidOtp) return;
+    setIsSubmitting(true);
+    try {
+      const {data} = await client.post('/auth/verify-email', {
+        userId: userInfo.id,
+        token: otp.join(''),
+      });
+      navigation.navigate('SignIn');
+    } catch (error) {
+      console.log('Verification  Error', error);
+    }
+    setIsSubmitting(false);
+  };
 
   useEffect(() => {
     inputRef.current?.focus();
   }, [activeOtpIndex]);
+
+  useEffect(() => {
+    if (canSendOtp) return;
+    const interval = setInterval(() => {
+      setCountDown((oldCountDown) => {
+        if (oldCountDown <= 0) {
+          setCanSendOtp(true);
+          clearInterval(interval);
+          return 0;
+        }
+        return oldCountDown - 1
+
+      });
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [canSendOtp]);
+
+  const requestOtp = async () => {
+    setCountDown(60);
+    setCanSendOtp(false)
+    try {
+      const {data} = await client.post('/auth/re-verify-email', {
+        userId: userInfo.id,
+      });
+    } catch (error) {
+      console.log('Resend Otp Error', error);
+    }
+  };
+
   return (
     <AuthFormContainer heading="Enter the One Time Password sent to your Email">
       <View style={styles.formContainer}>
@@ -66,9 +125,12 @@ const Verification: FC<Props> = props => {
           })}
         </View>
 
-        <AppBtn title="Submit" onPress={handleSubmit} />
+        <AppBtn loading={isSubmitting} title="Submit" onPress={handleSubmit} />
         <View style={styles.linkContainer}>
-          <AppLink title="Re-send OTP" />
+          {countDown > 0 ? (
+            <Text style={styles.countDown}>{countDown}s</Text>
+          ) : null}
+          <AppLink active={canSendOtp} title="Re-send OTP" onPress={requestOtp} />
         </View>
       </View>
     </AuthFormContainer>
@@ -85,7 +147,8 @@ const styles = StyleSheet.create({
   linkContainer: {
     marginTop: 20,
     width: '100%',
-    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
+    flexDirection: 'row',
   },
   inputContainer: {
     width: '100%',
@@ -93,6 +156,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
+  },
+  countDown: {
+    color: colors.SECONDARY,
+    marginRight: 7,
   },
 });
 

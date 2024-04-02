@@ -1,5 +1,5 @@
 import {FC} from 'react';
-import { useFormikContext } from 'formik';
+import {useFormikContext} from 'formik';
 import {Button, StyleSheet} from 'react-native';
 import AppBtn from 'ui/AppBtn';
 
@@ -8,8 +8,14 @@ interface Props {
 }
 
 const SubmitBtn: FC<Props> = ({title}) => {
-    const {handleSubmit} = useFormikContext()
-  return <AppBtn onPress={() => handleSubmit()} title={title} />;
+  const {handleSubmit, isSubmitting} = useFormikContext();
+  return (
+    <AppBtn
+      loading={isSubmitting}
+      onPress={() => handleSubmit()}
+      title={title}
+    />
+  );
 };
 
 const styles = StyleSheet.create({

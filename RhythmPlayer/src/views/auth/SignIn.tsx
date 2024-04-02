@@ -8,6 +8,10 @@ import SubmitBtn from 'components/form/SubmitBtn';
 import PasswordVisibilityIcon from 'ui/PasswordVisibilityIcon';
 import AppLink from 'ui/AppLink';
 import AuthFormContainer from 'components/AuthFormContainer';
+import {NavigationProp, useNavigation} from '@react-navigation/native';
+import {IAuthStackParamList} from 'types/navigation';
+import {FormikHelpers} from 'formik';
+import client from 'api/client';
 
 const SignInSchema = yup.object({
   email: yup
@@ -24,6 +28,11 @@ const SignInSchema = yup.object({
 
 interface Props {}
 
+interface SignInUser {
+  email: string;
+  password: string;
+}
+
 const initialValues = {
   email: '',
   password: '',
@@ -31,18 +40,31 @@ const initialValues = {
 
 const SignIn: FC<Props> = props => {
   const [secureEntry, setSecureEntry] = useState(true);
+  const navigation = useNavigation<NavigationProp<IAuthStackParamList>>();
 
   const togglePasswordView = () => {
     setSecureEntry(!secureEntry);
   };
 
+  const handleSubmit = async (
+    values: SignInUser,
+    actions: FormikHelpers<SignInUser>,
+  ) => {
+    actions.setSubmitting(true);
+    try {
+      const {data} = await client.post('/auth/sign-in', {...values});
+      console.log(data);
+    } catch (error) {
+      console.log('Sign in error', error);
+    }
+    actions.setSubmitting(false);
+  };
+
   return (
     <Form
+      onSubmit={handleSubmit}
       initialValues={initialValues}
-      validationSchema={SignInSchema}
-      onSubmit={values => {
-        return console.log(values);
-      }}>
+      validationSchema={SignInSchema}>
       <AuthFormContainer heading="Welcome back!">
         <View style={styles.formContainer}>
           <AuthInputField
@@ -64,8 +86,18 @@ const SignIn: FC<Props> = props => {
           />
           <SubmitBtn title="Sign in" />
           <View style={styles.linkContainer}>
-            <AppLink title="Forgot Password" />
-            <AppLink title="Sign up" />
+            <AppLink
+              title="Forgot Password"
+              onPress={() => {
+                navigation.navigate('ForgotPassword');
+              }}
+            />
+            <AppLink
+              title="Sign up"
+              onPress={() => {
+                navigation.navigate('SignUp');
+              }}
+            />
           </View>
         </View>
       </AuthFormContainer>
