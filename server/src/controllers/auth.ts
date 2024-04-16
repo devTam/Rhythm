@@ -228,7 +228,7 @@ export const updateProfile: RequestHandler = async (
 }
 
 export const sendProfile: RequestHandler = (req, res) => {
-  res.json({ profile: req.user })
+  res.json({ profile: req.user, token: req.token })
 }
 
 export const signOut: RequestHandler = async (req, res) => {
