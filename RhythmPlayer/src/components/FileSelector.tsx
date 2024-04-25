@@ -8,7 +8,7 @@ interface Props {
   style?: StyleProp<ViewStyle>
 }
 
-const Selector: FC<Props> = ({icon, btnTitle, style}) => {
+const FileSelector: FC<Props> = ({icon, btnTitle, style}) => {
   return (
     <Pressable style={[styles.btnContainer, style]}>
       <View style={styles.iconContainer}>{icon}</View>
@@ -38,4 +38,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Selector;
+export default FileSelector;
